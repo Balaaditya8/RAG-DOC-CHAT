@@ -15,7 +15,7 @@ st.title('📄 RAG-DOC-Chat')
 # File Upload
 uploaded_file = st.file_uploader("📂 Upload a PDF", type="pdf")
 
-# Initialize session state variables
+# Initialize session state
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "pdf_processed" not in st.session_state:
@@ -24,7 +24,6 @@ if "vectorstore" not in st.session_state:
     st.session_state.vectorstore = None
 if "rag_chain" not in st.session_state:
     st.session_state.rag_chain = None
-
 
 # API Key Input
 groq_api_key = st.text_input("🔑 Enter your Groq API key:", type="password")
@@ -80,29 +79,27 @@ if st.session_state.vectorstore and st.session_state.rag_chain is None:
     retriever = st.session_state.vectorstore.as_retriever()
     st.session_state.rag_chain = create_retrieval_chain(retriever, document_chain)
 
-# Display Chat History
-st.write("### 💬 Chat History")
-for i, (input_text, output_text) in enumerate(st.session_state.chat_history):
-    st.write(f"**🧑 You:** {input_text}")
-    st.write(f"**🤖 Assistant:** {output_text}")
-    st.write("---")
+# Display Chat Messages
+for input_text, output_text in st.session_state.chat_history:
+    with st.chat_message("user"):
+        st.write(input_text)
+    with st.chat_message("assistant"):
+        st.write(output_text)
 
-# User Input for Chat
-user_input = st.text_input("📝 Ask a question about the PDF:", key="user_input")
+# Capture User Input (Chat Input)
+user_input = st.chat_input("Ask a question about the PDF")
 
-# Process user input when button is clicked
-if st.button("Send") and user_input:
+# Process User Input
+if user_input:
+    with st.chat_message("user"):
+        st.write(user_input)
+
     # Get response from RAG model
     results = st.session_state.rag_chain.invoke({"input": user_input})
     answer = results["answer"]
 
-    # Append conversation to chat history
+    with st.chat_message("assistant"):
+        st.write(answer)
+
+    # Append to Chat History
     st.session_state.chat_history.append((user_input, answer))
-
-    # Clear the text input without modifying session state
-    user_input = ''
-
-# Display last assistant response
-if st.session_state.chat_history:
-    last_answer = st.session_state.chat_history[-1][1]
-    st.write(f"**🤖 Assistant:** {last_answer}")
